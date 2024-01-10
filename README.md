@@ -21,6 +21,16 @@ iex> Shh.exec!(conn, "install_elixir.sh")
 %Shh.Result{exit_status: 0, data: ["Success"]}
 ```
 
+## Inspiration
+
+Thank you to the [SSHKit.ex](https://github.com/bitcrowd/sshkit.ex) project for inspiring this project!
+
+While there are many similarities between these projects, I wanted to focus on the following:
+
+* Concurrency as a first-class feature
+* Integration testing over unit testing
+* Room to explore new API design
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
