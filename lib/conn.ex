@@ -89,7 +89,8 @@ defmodule Shh.Conn do
 
   def flush_channel(%__MODULE__{ref: ref} = conn, id) do
     receive do
-      {:ssh_cm, ^ref, {_, ^id, _}} -> flush_channel(conn, id)
+      {:ssh_cm, ^ref, {_, ^id, _}} = line ->
+        flush_channel(conn, id)
     after
       0 -> :ok
     end

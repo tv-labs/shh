@@ -21,14 +21,25 @@ defmodule Shh do
       fn ->
         channel = Conn.open_channel!(conn, opts)
         :ssh_connection.exec(conn.ref, channel, to_charlist(command), timeout)
-        channel
+        {channel, nil}
       end,
-      fn channel_id ->
+      fn {channel_id, exit_code} ->
         case Conn.receive_channel(conn, channel_id, timeout) do
-          {:data, status, message} -> {[{status, message}], channel_id}
-          {:exit_status, status} -> {[exit_status: status], channel_id}
-          :closed -> {:halt, channel_id}
-          {:error, :timeout} -> {:halt, channel_id}
+          {:data, status, message} ->
+            {[{status, message}], {channel_id, exit_code}}
+
+          {:exit_status, status} ->
+            {[exit_status: status], {channel_id, status}}
+
+          :closed ->
+            if exit_code do
+              {:halt, channel_id}
+            else
+              {[], {channel_id, exit_code}}
+            end
+
+          {:error, :timeout} ->
+            {:halt, channel_id}
         end
       end,
       fn channel_id ->
