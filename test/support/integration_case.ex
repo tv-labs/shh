@@ -32,7 +32,12 @@ defmodule Shh.IntegrationCase do
   def start_container! do
     Logger.debug("Starting docker container #{@image}")
     id = Docker.run!(["--rm", "--publish-all", "--detach"], @image)
-    [host, port] = Docker.cmd!("port", [id, "22/tcp"]) |> String.split(":")
+
+    [host, port] =
+      Docker.cmd!("port", [id, "22/tcp"])
+      |> String.split("\n")
+      |> List.first()
+      |> String.split(":")
 
     %{
       id: id,
