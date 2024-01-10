@@ -1,0 +1,106 @@
+name: CI Shh
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  Format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Elixir
+        id: beam
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: 1.16.0
+          otp-version: 26.2.1
+
+      - name: Cache deps
+        id: cache-deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-elixir-deps
+        with:
+          path: shh/deps
+          key: shh-${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            shh-${{ runner.os }}-mix-${{ env.cache-name }}-
+
+      - name: Cache compiled build
+        id: cache-build
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-compiled-build
+        with:
+          path: _build
+          key: shh-${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            shh-${{ runner.os }}-mix-${{ env.cache-name }}-
+            shh-${{ runner.os }}-mix-
+
+      - name: Install (Mix)
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: mix deps.get
+
+      - name: Format
+        run: mix format --check-formatted
+
+  Test:
+    name: Test (Elixir ${{ matrix.versions.elixir }} OTP ${{ matrix.versions.otp }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        versions:
+          - elixir: 1.15
+            otp: 26
+
+    env:
+      MIX_ENV: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install (Elixir)
+        id: beam
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.versions.elixir }}
+          otp-version: ${{ matrix.versions.otp }}
+
+      - name: Cache deps
+        id: cache-deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-elixir-deps
+        with:
+          path: deps
+          key: shh-${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            shh-${{ runner.os }}-mix-${{ env.cache-name }}-
+
+      - name: Cache compiled build
+        id: cache-build
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-compiled-build
+        with:
+          path: _build
+          key: shh-${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            shh-${{ runner.os }}-mix-${{ env.cache-name }}-
+            shh-${{ runner.os }}-mix-
+
+      - name: Install (Mix)
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: mix deps.get
+
+      - name: Compile
+        run: mix compile --warnings-as-errors
+
+      - name: Test
+        run: mix test

@@ -11,16 +11,15 @@ A friendly SSH client for Elixir
 
 ``` elixir
 iex> {:ok, conn} =
-...>  Shh.connect("elixir-lang.org",
-...>    port: 22,
-...>    user: "José",
-...>    user_dir: "./my_keys"
-...>  )
+...>   Shh.connect("elixir-lang.org",
+...>     port: 22,
+...>     user: "José",
+...>     user_dir: "./my_keys"
+...>   )
 
 iex> Shh.exec!(conn, "install_elixir.sh")
 %Shh.Result{exit_status: 0, data: ["Success"]}
 ```
-
 
 ## Installation
 
