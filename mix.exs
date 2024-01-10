@@ -18,8 +18,8 @@ defmodule Shh.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :ssh],
-      included_applications: [:ssh],
+      extra_applications: [:logger, :public_key, :ssh],
+      included_applications: [:public_key, :ssh],
       mod: {Shh.Application, []}
     ]
   end

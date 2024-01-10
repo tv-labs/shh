@@ -27,6 +27,10 @@ RUN mkdir -p /home/$PUBKEY_USER/.ssh && \
 # Copy pubkey_user pub key
 COPY --chown=pubkey_user:pubkey_user --chmod=600 pubkey_user.pub /home/$PUBKEY_USER/.ssh/authorized_keys
 
+WORKDIR /app
+
+COPY mixed_output.sh mixed_output.sh
+
 RUN echo hello_password_user > /home/$PASSWORD_USER/world.txt
 RUN echo hello_pubkey_user > /home/$PUBKEY_USER/world.txt
 

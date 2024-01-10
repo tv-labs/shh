@@ -10,17 +10,24 @@ defmodule Shh do
   """
   defdelegate connect(host, opts), to: Shh.Conn
 
-  def exec(conn, command, _context, opts \\ []) do
+  def exec!(conn, command, opts \\ []) do
+    stream!(conn, command, opts) |> Enum.into(%Shh.Result{})
+  end
+
+  def stream!(conn, command, opts \\ []) do
     timeout = Keyword.get(opts, :timeout, :infinity)
 
     Stream.resource(
       fn ->
         channel = Conn.open_channel!(conn, opts)
         :ssh_connection.exec(conn.ref, channel, to_charlist(command), timeout)
+        channel
       end,
       fn channel_id ->
         case Conn.receive_channel(conn, channel_id, timeout) do
-          {:ok, message} -> {[message], channel_id}
+          {:data, status, message} -> {[{status, message}], channel_id}
+          {:exit_status, status} -> {[exit_status: status], channel_id}
+          :closed -> {:halt, channel_id}
           {:error, :timeout} -> {:halt, channel_id}
         end
       end,

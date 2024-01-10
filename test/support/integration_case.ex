@@ -34,11 +34,11 @@ defmodule Shh.IntegrationCase do
     id = Docker.run!(["--rm", "--publish-all", "--detach"], @image)
     [host, port] = Docker.cmd!("port", [id, "22/tcp"]) |> String.split(":")
 
-    dbg(%{
+    %{
       id: id,
       hostname: host,
       port: String.to_integer(port)
-    })
+    }
   end
 
   def stop_container!(id) do

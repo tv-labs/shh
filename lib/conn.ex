@@ -63,12 +63,25 @@ defmodule Shh.Conn do
     end
   end
 
-  def receive_channel(%__MODULE__{ref: ref}, _id, timeout) do
+  def exec(%__MODULE__{ref: ref} = conn, command, opts \\ []) do
+    timeout = opts[:timeout] || :infinity
+    {:ok, channel} = open_channel(conn)
+    :ssh_connection.exec(ref, channel, command, timeout)
+  end
+
+  def receive_channel(%__MODULE__{ref: ref}, id, timeout) do
     receive do
-      # TODO match on the id?
-      {:ssh_cm, ^ref, message} ->
-        dbg(message)
-        {:ok, message}
+      {:ssh_cm, ^ref, {:data, ^id, type, data}} ->
+        {:data, if(type == 0, do: :normal, else: :error), data}
+
+      {:ssh_cm, ^ref, {:exit_status, ^id, code}} ->
+        {:exit_status, code}
+
+      {:ssh_cm, ^ref, {message, ^id}} when message in [:eof, :closed] ->
+        :closed
+
+      other ->
+        raise "TODO Need to handle other cases #{inspect other}"
     after
       timeout -> {:error, :timeout}
     end
