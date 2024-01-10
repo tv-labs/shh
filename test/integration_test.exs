@@ -50,11 +50,10 @@ defmodule Shh.IntegrationTest do
     end
 
     test "it can handle mixed output", %{conn: conn} do
-
       assert Shh.exec!(conn, "/app/mixed_output.sh") == %Shh.Result{
-              data: ["Normal: 1\nNormal: 2\n"],
-              errors: ["Error: 1\nError: 2\n"],
-              exit_status: 0
+               data: ["Normal: 1\nNormal: 2\n"],
+               errors: ["Error: 1\nError: 2\n"],
+               exit_status: 0
              }
     end
   end

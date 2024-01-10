@@ -81,7 +81,7 @@ defmodule Shh.Conn do
         :closed
 
       other ->
-        raise "TODO Need to handle other cases #{inspect other}"
+        raise "TODO Need to handle other cases #{inspect(other)}"
     after
       timeout -> {:error, :timeout}
     end
