@@ -58,6 +58,127 @@ defmodule Shh.IntegrationTest do
     end
   end
 
+  describe "concurrent connections" do
+    @describetag user: :pubkey_user
+    setup [:one_host]
+
+    test "connections to same host can exec! concurrently without conflicts", %{
+      host: host
+    } do
+      # Create multiple connections to the same host
+      count = 10
+
+      expectations =
+        Enum.map(1..(count - 1), fn i ->
+          {
+            Shh.Conn.connect!(host.hostname,
+              port: host.port,
+              user: "pubkey_user",
+              user_dir: "./test/support/docker"
+            ),
+            "echo 'conn#{i}' && sleep 0.#{Enum.random(1..3)} && echo 'done#{i}'",
+            %Shh.Result{data: ["conn#{i}\n", "done#{i}\n"], exit_status: 0}
+          }
+        end) ++
+          [
+            {
+              Shh.Conn.connect!(host.hostname,
+                port: host.port,
+                user: "pubkey_user",
+                user_dir: "./test/support/docker"
+              ),
+              "cat /nonexistent/file",
+              %Shh.Result{
+                exit_status: 1,
+                errors: ["cat: can't open '/nonexistent/file': No such file or directory\n"]
+              }
+            }
+          ]
+
+      # Execute commands concurrently using async tasks
+      assert results =
+               expectations
+               |> Enum.map(fn {conn, command, _expect} ->
+                 Task.async(fn -> Shh.exec!(conn, command) end)
+               end)
+               |> Task.await_many(10_000)
+
+      assert length(results) == count
+
+      results
+      |> Enum.zip(expectations)
+      |> Enum.each(fn {result, {_conn, command, expected}} ->
+        assert match?(^expected, result), """
+          Shh connection ran: `#{command}`.
+
+          Expected:
+          #{inspect(expected)}
+
+          Recevied:
+          #{inspect(result)}
+        """
+      end)
+    end
+
+    test "connections to same host on the same pid can exec! without conflicts",
+         %{
+           host: host
+         } do
+      # Create multiple connections to the same host
+      count = 10
+
+      expectations =
+        Enum.map(1..(count - 1), fn i ->
+          {
+            Shh.Conn.connect!(host.hostname,
+              port: host.port,
+              user: "pubkey_user",
+              user_dir: "./test/support/docker"
+            ),
+            "echo 'conn#{i}' && sleep 0.#{Enum.random(1..3)} && echo 'done#{i}'",
+            %Shh.Result{data: ["conn#{i}\n", "done#{i}\n"], exit_status: 0}
+          }
+        end) ++
+          [
+            {
+              Shh.Conn.connect!(host.hostname,
+                port: host.port,
+                user: "pubkey_user",
+                user_dir: "./test/support/docker"
+              ),
+              "cat /nonexistent/file",
+              %Shh.Result{
+                exit_status: 1,
+                errors: ["cat: can't open '/nonexistent/file': No such file or directory\n"]
+              }
+            }
+          ]
+
+      # Execute commands concurrently using async tasks
+      assert results =
+               Enum.map(
+                 expectations,
+                 fn {conn, command, _expect} -> Shh.exec!(conn, command) end
+               )
+
+      assert length(results) == count
+
+      results
+      |> Enum.zip(expectations)
+      |> Enum.each(fn {result, {_conn, command, expected}} ->
+        assert match?(^expected, result), """
+          Shh connection ran: `#{command}`.
+
+          Expected:
+          #{inspect(expected)}
+
+          Recevied:
+          #{inspect(result)}
+        """
+      end)
+    end
+  end
+
   defp one_host(%{hosts: hosts}) do
     %{host: List.first(hosts)}
   end

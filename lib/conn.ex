@@ -79,9 +79,6 @@ defmodule Shh.Conn do
 
       {:ssh_cm, ^ref, {message, ^id}} when message in [:eof, :closed] ->
         :closed
-
-      other ->
-        raise "TODO Need to handle other cases #{inspect(other)}"
     after
       timeout -> {:error, :timeout}
     end

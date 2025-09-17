@@ -24,3 +24,4 @@ shhh-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+/test/support/docker/known_hosts
