@@ -59,7 +59,7 @@ defmodule Shh.Conn do
 
       {:error, reason} ->
         # TODO raise a better exception
-        raise reason
+        raise Exception.normalize(:error, reason)
     end
   end
 
