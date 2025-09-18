@@ -59,7 +59,7 @@ defmodule Shh.Conn do
 
       {:error, reason} ->
         # TODO raise a better exception
-        raise reason
+        raise Exception.normalize(:error, reason)
     end
   end
 
@@ -79,9 +79,6 @@ defmodule Shh.Conn do
 
       {:ssh_cm, ^ref, {message, ^id}} when message in [:eof, :closed] ->
         :closed
-
-      other ->
-        raise "TODO Need to handle other cases #{inspect(other)}"
     after
       timeout -> {:error, :timeout}
     end
