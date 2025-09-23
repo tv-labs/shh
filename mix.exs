@@ -19,7 +19,6 @@ defmodule Shh.MixProject do
   def application do
     [
       extra_applications: [:logger, :public_key, :ssh],
-      included_applications: [:public_key, :ssh],
       mod: {Shh.Application, []}
     ]
   end
